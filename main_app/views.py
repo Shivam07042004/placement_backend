@@ -7,6 +7,8 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.http import JsonResponse
+from django.db import connection
+from django.conf import settings
 
 
 # Create your views here.
@@ -18,9 +20,51 @@ def api_root(request):
             "jobs": "/api/jobs/",
             "job_detail": "/api/jobs/{id}/",
             "login": "/api/login/",
+            "debug": "/api/debug/",
             "admin": "/admin/"
         }
     })
+
+def debug_info(request):
+    """Debug endpoint to check database connection and data"""
+    try:
+        # Test database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            db_connected = True
+    except Exception as e:
+        db_connected = False
+        db_error = str(e)
+    
+    try:
+        # Get job count
+        job_count = Job.objects.count()
+        jobs_exist = True
+    except Exception as e:
+        job_count = 0
+        jobs_exist = False
+        jobs_error = str(e)
+    
+    debug_data = {
+        "database": {
+            "connected": db_connected,
+            "error": db_error if not db_connected else None,
+            "engine": settings.DATABASES['default']['ENGINE'],
+            "host": settings.DATABASES['default'].get('HOST'),
+            "name": settings.DATABASES['default'].get('NAME'),
+        },
+        "jobs": {
+            "count": job_count,
+            "exist": jobs_exist,
+            "error": jobs_error if not jobs_exist else None,
+        },
+        "environment": {
+            "debug": settings.DEBUG,
+            "environment": getattr(settings, 'ENVIRONMENT', 'unknown'),
+        }
+    }
+    
+    return JsonResponse(debug_data)
 class JobList(APIView):
 
     def get(self,request):

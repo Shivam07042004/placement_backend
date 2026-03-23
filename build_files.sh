@@ -18,6 +18,9 @@ python manage.py makemigrations --noinput
 echo "Running migrations..."
 python manage.py migrate --noinput
 
+echo "Creating sample job data..."
+python manage.py create_sample_jobs
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput --clear
 

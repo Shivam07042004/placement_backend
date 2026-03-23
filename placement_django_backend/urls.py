@@ -21,8 +21,9 @@ from main_app import views
 urlpatterns = [
     path('', views.api_root, name='api_root'),
     path('admin/', admin.site.urls),
+    path('api/', views.api_root, name='api_info'),
+    path('api/debug/', views.debug_info, name='api_debug'),
     path('api/jobs/',views.JobList.as_view()),
     path('api/jobs/<int:pk>/',views.JobDetail.as_view()),
     path('api/login/', views.LoginAPI.as_view()),
-    path('api/', views.JobList.as_view())
 ]

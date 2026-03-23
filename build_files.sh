@@ -1,11 +1,24 @@
 #!/bin/bash
-# Build the project
-echo "Building the project..."
+
+# Install dependencies
+echo "Installing dependencies..."
+pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "Make Migration..."
+# Wait a moment for installation to complete
+sleep 2
+
+# Set the Django settings module
+export DJANGO_SETTINGS_MODULE=placement_django_backend.settings
+
+# Run Django management commands
+echo "Making migrations..."
 python manage.py makemigrations --noinput
+
+echo "Running migrations..."
 python manage.py migrate --noinput
 
-echo "Collect Static Files..."
+echo "Collecting static files..."
 python manage.py collectstatic --noinput --clear
+
+echo "Build completed successfully!"

@@ -6,9 +6,21 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
+from django.http import JsonResponse
 
 
 # Create your views here.
+def api_root(request):
+    return JsonResponse({
+        "message": "Welcome to Placement API",
+        "version": "1.0",
+        "endpoints": {
+            "jobs": "/api/jobs/",
+            "job_detail": "/api/jobs/{id}/",
+            "login": "/api/login/",
+            "admin": "/admin/"
+        }
+    })
 class JobList(APIView):
 
     def get(self,request):

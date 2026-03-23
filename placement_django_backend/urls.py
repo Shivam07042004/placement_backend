@@ -19,6 +19,7 @@ from django.urls import path
 from main_app import views
 
 urlpatterns = [
+    path('', views.api_root, name='api_root'),
     path('admin/', admin.site.urls),
     path('api/jobs/',views.JobList.as_view()),
     path('api/jobs/<int:pk>/',views.JobDetail.as_view()),

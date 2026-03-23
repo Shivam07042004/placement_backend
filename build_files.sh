@@ -2,8 +2,8 @@
 
 # Install dependencies
 echo "Installing dependencies..."
-pip install --upgrade pip
-pip install -r requirements.txt
+pip install --upgrade pip --break-system-packages
+pip install -r requirements.txt --break-system-packages
 
 # Wait a moment for installation to complete
 sleep 2

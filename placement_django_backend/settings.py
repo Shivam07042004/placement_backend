@@ -19,6 +19,7 @@ from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+ENVIRONMENT = config('ENVIRONMENT', default='development')
 
 
 # Quick-start development settings - unsuitable for production
@@ -28,7 +29,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-)^-09i!5&(1t_*1hpr$(zq2aj6tbml!trrs=bk(1m49f2saw#)')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+_DEBUG_RAW = str(config('DEBUG', default='True')).strip().lower()
+DEBUG = _DEBUG_RAW in ('1', 'true', 'yes', 'on')
 
 # ALLOWED_HOSTS = []
 
@@ -90,23 +92,40 @@ import os
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# Use SQLite for local development, MySQL for production
-if config('ENVIRONMENT', default='development') == 'production':
+# Use SQLite for local development, MySQL-compatible DB (Railway/TiDB) for production.
+if ENVIRONMENT == 'production':
+    db_name = config('TIDB_DATABASE', default=config('MYSQLDATABASE', default=''))
+    db_user = config('TIDB_USERNAME', default=config('MYSQLUSER', default=''))
+    db_password = config('TIDB_PASSWORD', default=config('MYSQLPASSWORD', default=''))
+    db_host = config('TIDB_HOST', default=config('MYSQLHOST', default=''))
+    db_port = config('TIDB_PORT', default=config('MYSQLPORT', default='4000'))
+    db_ssl_ca = config('TIDB_SSL_CA', default='')
+    db_ssl_disable = config('TIDB_SSL_DISABLE', default=False, cast=bool)
+
+    db_options = {
+        'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        'charset': 'utf8mb4',
+        'connect_timeout': 15,
+        'ssl': {
+            'check_hostname': True,
+            'require_ssl': True
+        }
+    }
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': config('MYSQLDATABASE', default='railway'),
-            'USER': config('MYSQLUSER', default='root'),
-            'PASSWORD': config('MYSQLPASSWORD'),
-            'HOST': config('MYSQLHOST', default='mysql.railway.internal'),
-            'PORT': config('MYSQLPORT', default='3306'),
-            'OPTIONS': {
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            }
+            'NAME': db_name,
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host,
+            'PORT': db_port,
+            # TiDB serverless can drop idle connections; avoid stale pooled connections by default.
+            'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=0, cast=int),
+            'OPTIONS': db_options,
         }
     }
 else:
-    # SQLite for local development
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -183,3 +202,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# AI embedding configuration
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
+OPENAI_BASE_URL = config('OPENAI_BASE_URL', default='https://aipipe.org/openai/v1')

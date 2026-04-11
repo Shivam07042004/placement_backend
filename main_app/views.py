@@ -7,13 +7,14 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.http import JsonResponse
-from django.db import connection
+from django.db import connection, transaction
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
 from .services import (
     extract_text_from_resume, 
     get_embedding, 
-    find_similar_jobs
+    find_similar_jobs,
+    create_job_summary
 )
 from .rag_service import process_resume_with_rag
 
@@ -95,10 +96,51 @@ class JobList(APIView):
         return Response(serializer.data,status=status.HTTP_200_OK)
     
     def post(self,request):
-        serializer = JobSerializer(data=request.data)
+        payload = request.data.copy()
+        request_api_key = payload.pop('openai_api_key', '')
+        if isinstance(request_api_key, list):
+            request_api_key = request_api_key[0] if request_api_key else ''
+
+        serializer = JobSerializer(data=payload)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data,status=status.HTTP_201_CREATED)
+            try:
+                with transaction.atomic():
+                    job = serializer.save()
+
+                    # Try to create embedding if API key is available
+                    api_key = str(request_api_key).strip()
+                    if not api_key:
+                        api_key = getattr(settings, 'OPENAI_API_KEY', '').strip()
+
+                    # Only create embedding if API key is provided
+                    if api_key and len(api_key) > 10:
+                        try:
+                            job_summary = create_job_summary(job)
+                            embedding = get_embedding(
+                                job_summary,
+                                api_key,
+                                base_url=getattr(settings, 'OPENAI_BASE_URL', "https://aipipe.org/openai/v1")
+                            )
+
+                            JobEmbedding.objects.update_or_create(
+                                job=job,
+                                defaults={
+                                    'embedding': embedding,
+                                    'job_text': job_summary
+                                }
+                            )
+                        except Exception as e:
+                            # Log embedding error but don't fail job creation
+                            print(f"Warning: Failed to create job embedding: {str(e)}")
+                    else:
+                        print("Info: Skipping embedding creation - no OpenAI API key provided")
+
+                return Response(JobSerializer(job).data, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response(
+                    {"error": f"Failed to create job: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
 

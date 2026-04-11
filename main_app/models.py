@@ -21,3 +21,23 @@ class Job(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class JobEmbedding(models.Model):
+    """
+    Stores vector embeddings for jobs.
+    Used for semantic search when matching resumes to jobs.
+    """
+    job = models.OneToOneField(Job, on_delete=models.CASCADE, related_name='embedding')
+    embedding = models.JSONField()  # Stores list of floats (1536 dimensions for OpenAI)
+    job_text = models.TextField()  # Combined text from title, company, description for chunking
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['job']),
+        ]
+
+    def __str__(self):
+        return f"Embedding for {self.job.title}"

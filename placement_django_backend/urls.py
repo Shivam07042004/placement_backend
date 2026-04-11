@@ -26,4 +26,6 @@ urlpatterns = [
     path('api/jobs/',views.JobList.as_view()),
     path('api/jobs/<int:pk>/',views.JobDetail.as_view()),
     path('api/login/', views.LoginAPI.as_view()),
+    path('api/resume/match-jobs/', views.ResumeMatchJobsAPI.as_view(), name='resume_match_jobs'),
+    path('api/jobs/embed-all/', views.EmbedAllJobsAPI.as_view(), name='embed_all_jobs'),
 ]

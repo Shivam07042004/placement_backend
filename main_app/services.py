@@ -139,14 +139,15 @@ def cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
     return float(dot_product / (norm1 * norm2))
 
 
-def find_similar_jobs(resume_embedding: List[float], top_k: int = 10) -> List[Tuple]:
+def find_similar_jobs(resume_embedding: List[float], top_k: Optional[int] = None, min_similarity: float = 0.0) -> List[Tuple]:
     """
     Find most similar jobs to resume using database embeddings.
     Uses cosine similarity without vector database.
     
     Args:
         resume_embedding: Embedding vector of the resume
-        top_k: Number of top similar jobs to return
+        top_k: Optional number of top similar jobs to return. If None, returns all jobs above the similarity threshold.
+        min_similarity: Minimum cosine similarity threshold for returned jobs.
         
     Returns:
         List[Tuple]: List of (job, similarity_score) tuples, sorted by similarity
@@ -159,10 +160,13 @@ def find_similar_jobs(resume_embedding: List[float], top_k: int = 10) -> List[Tu
     similarities = []
     for job_emb in job_embeddings:
         similarity = cosine_similarity(resume_embedding, job_emb.embedding)
-        similarities.append((job_emb.job, similarity))
+        if similarity >= min_similarity:
+            similarities.append((job_emb.job, similarity))
     
-    # Sort by similarity (descending) and return top_k
+    # Sort by similarity (descending)
     similarities.sort(key=lambda x: x[1], reverse=True)
+    if top_k is not None:
+        return similarities[:top_k]
     return similarities[:top_k]
 
 

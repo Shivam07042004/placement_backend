@@ -269,12 +269,12 @@ class ResumeMatchJobsAPI(APIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             
-            # Find similar jobs using vector search
-            similar_jobs = find_similar_jobs(resume_embedding, top_k=20)
+            # Find similar jobs using vector search, only keeping jobs with >= 50% cosine similarity
+            similar_jobs = find_similar_jobs(resume_embedding, min_similarity=0.5)
             
             if not similar_jobs:
                 return Response(
-                    {"error": "No matching jobs found"},
+                    {"error": "No matching jobs found with at least 50% similarity"},
                     status=status.HTTP_404_NOT_FOUND
                 )
             

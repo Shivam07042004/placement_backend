@@ -84,7 +84,9 @@ def _extract_from_image(file) -> str:
     """Extract text from image using EasyOCR"""
     if not EASYOCR_AVAILABLE:
         raise ValueError(
-            "Image OCR is not available. Please install EasyOCR: pip install easyocr"
+            "Image upload not supported in this environment. "
+            "Please upload PDF, DOCX, or TXT resume instead. "
+            "Image OCR requires: pip install easyocr"
         )
     try:
         reader = easyocr.Reader(['en'], gpu=False)

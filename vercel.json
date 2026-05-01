@@ -4,7 +4,11 @@
     {
       "src": "wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.9" }
+      "config": {
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.9",
+        "requirements": "requirements-prod.txt"
+      }
     },
     {
       "src": "build_files.sh",

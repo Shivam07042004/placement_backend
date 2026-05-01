@@ -5,10 +5,10 @@ import os
 import io
 from typing import Optional, List, Tuple
 try:
-    import pytesseract
-    PYTESSERACT_AVAILABLE = True
+    import easyocr
+    EASYOCR_AVAILABLE = True
 except ImportError:
-    PYTESSERACT_AVAILABLE = False
+    EASYOCR_AVAILABLE = False
     
 from PIL import Image
 from pypdf import PdfReader
@@ -81,15 +81,16 @@ def _extract_from_txt(file) -> str:
 
 
 def _extract_from_image(file) -> str:
-    """Extract text from image using OCR (pytesseract)"""
-    if not PYTESSERACT_AVAILABLE:
+    """Extract text from image using EasyOCR"""
+    if not EASYOCR_AVAILABLE:
         raise ValueError(
-            "Image OCR is not available. Please install Tesseract OCR: "
-            "https://github.com/UB-Mannheim/tesseract/wiki"
+            "Image OCR is not available. Please install EasyOCR: pip install easyocr"
         )
     try:
-        image = Image.open(io.BytesIO(file.read()))
-        text = pytesseract.image_to_string(image)
+        reader = easyocr.Reader(['en'], gpu=False)
+        image_array = Image.open(io.BytesIO(file.read()))
+        result = reader.readtext(image_array, detail=0)
+        text = '\n'.join(result) if result else ""
         return text.strip()
     except Exception as e:
         raise ValueError(f"Failed to extract text from image: {str(e)}")
